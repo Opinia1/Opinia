@@ -1,0 +1,78 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+enum Gender { male female other undisclosed }
+enum VerificationLevel { none basic verified trusted }
+enum PollKind { evergreen timeboxed milestone }
+model User {
+  id                 String   @id @default(uuid())
+  handle             String   @unique
+  email              String   @unique
+  nationality        String
+  country            String
+  city               String?
+  birth_year         Int
+  gender             Gender   @default(undisclosed)
+  verification_level VerificationLevel @default(none)
+  created_at         DateTime @default(now())
+}
+model Poll {
+  id               String   @id @default(uuid())
+  question         String
+  type             String
+  options_json     Json
+  language         String   @default("en")
+  is_open          Boolean  @default(true)
+  created_at       DateTime @default(now())
+  started_at       DateTime @default(now())
+  closes_at        DateTime?
+  owner_id         String
+  tags             String[]
+  eligibility_json Json     @default("{}")
+  visibility       String   @default("show_but_locked")
+  poll_kind        PollKind @default(evergreen)
+  phase            Int      @default(1)
+  decay_half_life_days Int?
+}
+model VoteEvent {
+  id            String   @id @default(uuid())
+  poll_id       String
+  user_id       String
+  option_id     String
+  value_numeric Float?
+  mood_score    Int?
+  comment_text  String?
+  created_at    DateTime @default(now())
+  client_locale String?
+  client_tz     String?
+  trust_score   Float    @default(0.5)
+  risk_tags     String[] @default([])
+}
+model SentimentEvent {
+  id             String   @id @default(uuid())
+  poll_id        String
+  user_id        String
+  option_id      String
+  raw_model_score Float?
+  mood_score     Int?
+  blended_score  Float?
+  model_version  String?
+  created_at     DateTime @default(now())
+  included       Boolean  @default(true)
+}
+model PollPhase {
+  id         String   @id @default(uuid())
+  poll_id    String
+  phase      Int
+  label      String?
+  started_at DateTime @default(now())
+  ended_at   DateTime?
+  notes_json Json?
+}
+model SentimentSnapshot {
+  id         String   @id @default(uuid())
+  poll_id    String
+  phase      Int
+  ts         DateTime
+  window     String
+  metrics    Json
+}
